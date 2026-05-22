@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>⚡ STABLE HI-FI OPEN-SKIN ENGINE v7.1 ⚡</title>
+    <style>
+        :root { 
+            --bg: #06020f; --card-bg: #110724; --panel-bg: #0d0914;
+            --neon: #00f0ff; --accent: #ff007f; --radius: 8px;
+            --font-main: 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: var(--bg); color: white; font-family: var(--font-main);
+            margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        /* Header */
+        .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: rgba(0,0,0,0.4); border-bottom: 2px solid var(--accent); }
+        .menu-trigger { font-size: 1.5em; background: transparent; border: none; color: white; cursor: pointer; }
+        .app-title { font-weight: bold; font-size: 1.1em; letter-spacing: 1px; }
+
+        /* MENÚ LATERAL */
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--panel-bg); z-index: 200; box-shadow: 5px 0 25px rgba(0,0,0,0.8); transition: left 0.3s ease; display: flex; flex-direction: column; }
+        .sidebar.open { left: 0; }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 199; display: none; }
+        .sidebar-overlay.show { display: block; }
+        .user-profile { padding: 25px 20px; background: rgba(0,0,0,0.2); text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .avatar { width: 65px; height: 65px; border-radius: 50%; background: #444; margin: 0 auto 10px; border: 3px solid var(--neon); display: flex; align-items: center; justify-content: center; font-size: 1.8em; }
+
+        .menu-list { flex: 1; overflow-y: auto; padding: 10px 0; }
+        .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9em; cursor: pointer; }
+        .status-toggle { font-size: 0.85em; font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+        .status-toggle.on { color: var(--neon); }
+        .status-toggle.off { color: #666; }
+
+        /* NAVIGATION BAR */
+        .nav-tabs { display: flex; background: rgba(0,0,0,0.5); border-top: 2px solid var(--accent); position: fixed; bottom: 0; width: 100%; z-index: 100; height: 60px; }
+        .tab-btn { flex: 1; background: transparent; border: none; color: white; opacity: 0.6; font-size: 0.7em; text-transform: uppercase; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: var(--font-main); }
+        .tab-btn.active { color: var(--neon); opacity: 1; font-weight: bold; }
+        .tab-btn span { font-size: 1.4em; }
+        
+        /* Windows */
+        .window-content { flex: 1; overflow-y: auto; padding: 15px 15px 75px 15px; box-sizing: border-box; display: none; }
+        .window-content.active { display: block; }
+
+        /* Mixer Subnav */
+        .mixer-subnav { display: flex; background: rgba(0,0,0,0.3); border: 1px solid var(--accent); border-radius: var(--radius); margin-bottom: 15px; overflow: hidden; }
+        .sub-btn { flex: 1; background: transparent; border: none; color: white; opacity: 0.7; padding: 12px 0; font-size: 0.75em; font-weight: bold; text-transform: uppercase; cursor: pointer; font-family: var(--font-main); }
+        .sub-btn.active { background: var(--accent); color: white; opacity: 1; }
+        .sub-mixer-content { display: none; }
+        .sub-mixer-content.active { display: block; }
+
+        /* Player Graphics Optimized (No heavy 3D rendering) */
+        .player-container { text-align: center; padding-top: 20px; }
+        .turntable { width: 180px; height: 180px; margin: 0 auto 20px; border-radius: 50%; border: 6px dashed var(--accent); background-image: url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=300'); background-position: center; background-size: cover; }
+        
+        /* EQ Grid */
+        .eq-grid { display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 12px; border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.1); }
+        .eq-bar { display: flex; flex-direction: column; align-items: center; width: 9%; }
+        .eq-bar input[type=range] { writing-mode: vertical-lr; direction: rtl; height: 110px; accent-color: var(--neon); width: 100%; }
+        
+        /* Panels */
+        .xeq-panel { background: var(--card-bg); border: 1px solid var(--accent); border-radius: var(--radius); padding: 15px; }
+        .knob-row { display: flex; flex-wrap: wrap; justify-content: space-between; }
+        .knob-box { width: 32%; text-align: center; margin-bottom: 10px; }
+        .knob-box label { display: block; font-size: 0.65em; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+        .knob-box input[type=range] { width: 95%; accent-color: var(--accent); }
+        .knob-val { font-size: 0.7em; color: var(--neon); }
+        
+        /* Input de Skins */
+        .skin-input-box { background: var(--card-bg); border: 2px dashed var(--neon); padding: 15px; border-radius: var(--radius); margin-top: 15px; }
+        .skin-text-area { width: 100%; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid var(--accent); color: var(--neon); font-family: monospace; font-size: 0.8em; padding: 8px; border-radius: var(--radius); box-sizing: border-box; resize: none; }
+        
+        /* Botones */
+        .btn-core { background: var(--accent); border: none; color: white; padding: 12px; font-weight: bold; border-radius: var(--radius); width: 100%; text-transform: uppercase; margin-top: 10px; cursor: pointer; font-family: var(--font-main); }
+        .skin-badge { background: var(--neon); color: black; font-size: 0.7em; font-weight: bold; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; }
+        
+        /* Lista de Skins */
+        .skin-item { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border: 1px solid var(--accent); padding: 12px; border-radius: var(--radius); margin-bottom: 8px; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Orbitron:wght@700&family=Press+Start+2P&family=Bangers&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="sidebar-overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="user-profile">
+            <div class="avatar">⚙️</div>
+            <div style="font-weight: bold; margin-bottom: 2px;">Audio Engine</div>
+            <span class="skin-badge" id="menu-skin-name">Cyberpunk</span>
+        </div>
+        <div class="menu-list">
+            <div class="menu-item" onclick="toggleEQEngine()">
+                <div class="menu-item-left">🎛️ GEQ (10 Bandas)</div>
+                <div class="status-toggle off" id="status-eq">Apagar</div>
+            </div>
+            <div class="menu-item" onclick="toggleCompEngine()">
+                <div class="menu-item-left">📈 PEQ (Compresor)</div>
+                <div class="status-toggle off" id="status-comp">Apagar</div>
+            </div>
+            <div class="menu-item" onclick="toggleXoverEngine()">
+                <div class="menu-item-left">〰️ X-OVER (Crossover)</div>
+                <div class="status-toggle off" id="status-xover">Apagar</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-header">
+        <button class="menu-trigger" onclick="toggleMenu()">☰</button>
+        <div class="app-title">HI-FI AUDIO CORE</div>
+        <span class="skin-badge" id="current-skin-badge">CYBERPUNK</span>
+    </div>
+
+    <div id="win-player" class="window-content active">
+        <div class="player-container">
+            <div class="turntable" id="disc"></div>
+            <h2 id="track-title" style="margin: 5px 0 2px 0;">MOTOR ESTABLE</h2>
+            <p id="track-meta" style="color: var(--neon); margin: 0; font-size: 0.85em; font-weight: bold;">HI-RES FLAC READY</p>
+            <button class="btn-core" onclick="conectarMotor()">⚡ ENCENDER PROCESADOR AUDIO</button>
+        </div>
+    </div>
+
+    <div id="win-mixer" class="window-content">
+        <div class="mixer-subnav">
+            <button class="sub-btn active" id="btn-sub-geq" onclick="switchSubMixer('geq')">🎛️ GEQ</button>
+            <button class="sub-btn" id="btn-sub-peq" onclick="switchSubMixer('peq')">📈 PEQ</button>
+            <button class="sub-btn" id="btn-sub-xover" onclick="switchSubMixer('xover')">〰️ X-Over</button>
+        </div>
+        <div id="sub-mixer-geq" class="sub-mixer-content active"><div class="eq-grid" id="eq-hardware"></div></div>
+        <div id="sub-mixer-peq" class="sub-mixer-content">
+            <div class="xeq-panel">
+                <div class="knob-row">
+                    <div class="knob-box"><label>Attack</label><input type="range" min="1" max="100" value="20" oninput="updateKnob('att', this.value)"><div class="knob-val" id="v-att">20ms</div></div>
+                    <div class="knob-box"><label>Release</label><input type="range" min="10" max="500" value="250" oninput="updateKnob('rel', this.value)"><div class="knob-val" id="v-rel">250ms</div></div>
+                    <div class="knob-box"><label>Ratio</label><input type="range" min="1" max="10" value="4" oninput="updateKnob('rat', this.value)"><div class="knob-val" id="v-rat">4:1</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="sub-mixer-xover" class="sub-mixer-content">
+            <div class="xeq-panel">
+                <div class="knob-row">
+                    <div class="knob-box" style="width: 48%;"><label>Low X-Over</label><input type="range" min="60" max="1200" value="120" oninput="updateKnob('lx', this.value)"><div class="knob-val" id="v-lx">120 Hz</div></div>
+                    <div class="knob-box" style="width: 48%;"><label>High X-Over</label><input type="range" min="1200" max="6000" value="1200" oninput="updateKnob('hx', this.value)"><div class="knob-val" id="v-hx">1200 Hz</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="win-skins" class="window-content">
+        <h2>Gestor de Estilos Nativos</h2>
+        <div id="lista-skins-disponibles"></div>
+        <div class="skin-input-box">
+            <h3 style="margin: 0 0 10px 0; font-size: 0.9em; color: var(--neon);">📥 Importar Skin Externa</h3>
+            <textarea class="skin-text-area" id="skin-paste-bin" placeholder='Pega el JSON de tu skin aquí...'></textarea>
+            <button class="btn-core" onclick="importarSkinExterna()">⚡ Aplicar Skin</button>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('player')"><span>🎵</span>Player</button>
+        <button class="tab-btn" onclick="switchTab('mixer')"><span>🎛️</span>Mixer</button>
+        <button class="tab-btn" onclick="switchTab('skins')"><span>🎨</span>Skins</button>
+    </div>
+
+    <audio id="hifi-core" crossOrigin="anonymous"></audio>
+
+<script>
+    // REPOSITORIO OPTIMIZADO (Valores ultra directos para no saturar memoria)
+    let REPOSITORIO_SKINS = {
+        cyberpunk: { name: "Cyberpunk Neon", font: "'Orbitron', sans-serif", bg: "#06020f", cardBg: "#110724", panelBg: "#0d0914", neon: "#00f0ff", accent: "#ff007f", radius: "4px" },
+        cartoon: { name: "Cartoon Network Retro", font: "'Permanent Marker', cursive", bg: "#151515", cardBg: "#262626", panelBg: "#1c1c1c", neon: "#fff000", accent: "#00ffcc", radius: "0px" },
+        anime: { name: "Shonen Fire Anime", font: "'Bangers', cursive", bg: "#240915", cardBg: "#421228", panelBg: "#300d1e", neon: "#ff4500", accent: "#ffcc00", radius: "12px" },
+        gaming: { name: "GameBoy Classic", font: "'Press Start 2P', cursive", bg: "#0a1c0a", cardBg: "#0f380f", panelBg: "#071807", neon: "#9bbc0f", accent: "#306230", radius: "2px" }
+    };
+
+    function renderizarListaSkins() {
+        const contenedor = document.getElementById('lista-skins-disponibles');
+        contenedor.innerHTML = '';
+        Object.keys(REPOSITORIO_SKINS).forEach(key => {
+            const s = REPOSITORIO_SKINS[key];
+            const div = document.createElement('div'); div.className = 'skin-item';
+            div.innerHTML = `<div><strong style="font-size:0.9em;">${s.name}</strong></div><button class="btn-core" style="width:auto; margin:0; padding:6px 12px; font-size:0.75em;" onclick="aplicarSkinEngine('${key}')">Usar</button>`;
+            contenedor.appendChild(div);
+        });
+    }
+
+    function aplicarSkinEngine(key) {
+        const skin = REPOSITORIO_SKINS[key];
+        const r = document.documentElement.style;
+        r.setProperty('--bg', skin.bg);
+        r.setProperty('--card-bg', skin.cardBg);
+        r.setProperty('--panel-bg', skin.panelBg);
+        r.setProperty('--neon', skin.neon);
+        r.setProperty('--accent', skin.accent);
+        r.setProperty('--radius', skin.radius);
+        r.setProperty('--font-main', skin.font);
+        document.getElementById('current-skin-badge').innerText = skin.name;
+        document.getElementById('menu-skin-name').innerText = skin.name;
+    }
+
+    function importarSkinExterna() {
+        const txt = document.getElementById('skin-paste-bin').value.trim();
+        try {
+            const nuevaSkin = JSON.parse(txt);
+            if(!nuevaSkin.name || !nuevaSkin.bg || !nuevaSkin.neon) return alert("Formato incorrecto.");
+            const idUnico = "custom_" + Date.now();
+            REPOSITORIO_SKINS[idUnico] = nuevaSkin;
+            renderizarListaSkins(); aplicarSkinEngine(idUnico);
+            document.getElementById('skin-paste-bin').value = '';
+        } catch(e) { alert("JSON no válido."); }
+    }
+
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.window-content').forEach(w => w.classList.remove('active'));
+        const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.innerHTML.includes(tabId==='player'?'🎵':tabId==='mixer'?'🎛️':'🎨'));
+        if(btn) btn.classList.add('active');
+        document.getElementById(`win-${tabId}`).classList.add('active');
+    }
+    function switchSubMixer(subId) {
+        document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.sub-mixer-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`btn-sub-${subId}`).classList.add('active');
+        document.getElementById(`sub-mixer-${subId}`).classList.add('active');
+    }
+
+    // AUDIO DSP NATIVO - MÁXIMA ESTABILIDAD
+    const frecuenciasEQ = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    let filtrosEQ = []; let audioCtx, compressorNode, lowXoverFilter, highXoverFilter, source;
+    const audio = document.getElementById('hifi-core');
+    let motorEncendido = false; let eqActivo = true, compActivo = true, xoverActivo = true;
+
+    const eqHardware = document.getElementById('eq-hardware');
+    frecuenciasEQ.forEach((freq, idx) => {
+        const div = document.createElement('div'); div.className = 'eq-bar';
+        div.innerHTML = `<span style="font-size:0.5em;margin-bottom:4px;">${freq>=1000?(freq/1000)+'k':freq}</span><input type="range" id="eq-${idx}" min="-12" max="12" value="0" oninput="ajustarFrecuencia(${idx}, this.value)"><span style="font-size:0.5em;margin-top:4px;" id="val-${idx}">0dB</span>`;
+        eqHardware.appendChild(div);
+    });
+
+    function conectarMotor() {
+        if (motorEncendido) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        compressorNode = audioCtx.createDynamicsCompressor();
+        lowXoverFilter = audioCtx.createBiquadFilter(); lowXoverFilter.type = "lowpass";
+        highXoverFilter = audioCtx.createBiquadFilter(); highXoverFilter.type = "highpass";
+        source = audioCtx.createMediaElementSource(audio);
+        reconstruirCadenaAudio(); motorEncendido = true; updateMenuStatusVisuals();
+    }
+
+    function reconstruirCadenaAudio() {
+        if (!source) return; source.disconnect(); filtrosEQ.forEach(f => f.disconnect()); compressorNode.disconnect(); lowXoverFilter.disconnect(); highXoverFilter.disconnect();
+        let nodoAnterior = source; filtrosEQ = [];
+        if (eqActivo) {
+            frecuenciasEQ.forEach((freq, idx) => {
+                let filter = audioCtx.createBiquadFilter(); filter.type = idx===0?'lowshelf':idx===frecuenciasEQ.length-1?'highshelf':'peaking';
+                filter.frequency.value = freq; filter.gain.value = document.getElementById(`eq-${idx}`).value;
+                filtrosEQ.push(filter); nodoAnterior.connect(filter); nodoAnterior = filter;
+            });
+        }
+        if (compActivo) { nodoAnterior.connect(compressorNode); nodoAnterior = compressorNode; }
+        if (xoverActivo) { nodoAnterior.connect(lowXoverFilter); lowXoverFilter.connect(highXoverFilter); nodoAnterior = highXoverFilter; }
+        nodoAnterior.connect(audioCtx.destination);
+    }
+
+    function toggleEQEngine() { eqActivo = !eqActivo; if(motorEncendido) reconstruirCadenaAudio(); updateMenuStatusVisuals(); }
+    function toggleCompEngine() { compActivo = !compActivo; if(motorEncendido) reconstruirCadenaAudio(); updateMenuStatusVisuals(); }
+    function toggleXoverEngine() { xoverActivo = !xoverActivo; if(motorEncendido) reconstruirCadenaAudio(); updateMenuStatusVisuals(); }
+
+    function updateMenuStatusVisuals() {
+        document.getElementById('status-eq').innerText = eqActivo ? "Encendido" : "Apagar"; document.getElementById('status-eq').className = `status-toggle ${eqActivo?'on':'off'}`;
+        document.getElementById('status-comp').innerText = compActivo ? "Encendido" : "Apagar"; document.getElementById('status-comp').className = `status-toggle ${compActivo?'on':'off'}`;
+        document.getElementById('status-xover').innerText = xoverActivo ? "Encendido" : "Apagar"; document.getElementById('status-xover').className = `status-toggle ${xoverActivo?'on':'off'}`;
+    }
+
+    function ajustarFrecuencia(index, val) {
+        if (motorEncendido && eqActivo && filtrosEQ[index]) filtrosEQ[index].gain.value = val;
+        document.getElementById(`val-${index}`).innerText = `${val>0?'+':''}${val}dB`;
+    }
+
+    function updateKnob(type, val) {
+        if (!motorEncendido) return;
+        switch(type) {
+            case 'att': compressorNode.attack.value = val / 1000; document.getElementById('v-att').innerText = val + "ms"; break;
+            case 'rel': compressorNode.release.value = val / 1000; document.getElementById('v-rel').innerText = val + "ms"; break;
+            case 'rat': compressorNode.ratio.value = val; document.getElementById('v-rat').innerText = val + ":1"; break;
+            case 'lx': lowXoverFilter.frequency.value = val; document.getElementById('v-lx').innerText = val + " Hz"; break;
+            case 'hx': highXoverFilter.frequency.value = val; document.getElementById('v-hx').innerText = val + " Hz"; break;
+        }
+    }
+
+    renderizarListaSkins();
+</script>
+</body>
+</html>
